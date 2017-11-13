@@ -14,8 +14,8 @@ namespace MachineLanguage
 	public partial class frmMain : Form
 	{
 		TextBox txtFastEdit;
-		System.Windows.Forms.ListViewItem[] lstMemory;
-		System.Windows.Forms.ListViewItem[] lstRegister;
+		ListViewItem[] lstMemory;
+		ListViewItem[] lstRegister;
 
 		byte[] valMemory = new byte[256];
 		byte[] valRegister = new byte[16];
@@ -47,13 +47,13 @@ namespace MachineLanguage
 
 
 			//Fills both the Memory and the Register with initial values of 0x00
-			lstMemory = new System.Windows.Forms.ListViewItem[256];
-			lstRegister = new System.Windows.Forms.ListViewItem[16];
+			lstMemory = new ListViewItem[256];
+			lstRegister = new ListViewItem[16];
 			for (int i = 0; i < 256; i++)
 			{
-				lstMemory[i] = new System.Windows.Forms.ListViewItem(new string[] { Extra.ToHex(i, 2), "00000000", "00", "0", "0" });
+				lstMemory[i] = new ListViewItem(new string[] { Extra.ToHex(i, 2), "00000000", "00", "0", "0" });
 
-				if (i < 16) lstRegister[i] = new System.Windows.Forms.ListViewItem(new string[] { Extra.ToHex(i, 1), "00000000", "00", "0", "0" });
+				if (i < 16) lstRegister[i] = new ListViewItem(new string[] { Extra.ToHex(i, 1), "00000000", "00", "0", "0" });
 			}
 
 			lstMyMemory.Items.AddRange(lstMemory);
@@ -238,7 +238,6 @@ namespace MachineLanguage
 				byte T = (byte)(IR[1] & 0xF);
 
 				EditRegister(R, (byte)(valRegister[S] + valRegister[T]));
-
 			}
 			else if (opcode == 6)
 			{
@@ -286,10 +285,7 @@ namespace MachineLanguage
 			else if (opcode == 11)
 			{ //B
 				byte R = (byte)(IR[0] & 0xF);
-				if (valRegister[R] == valRegister[0])
-				{
-					PC = IR[1];
-				}
+				if (valRegister[R] == valRegister[0]) PC = IR[1];
 			}
 			else if (opcode == 12)
 			{ //C
@@ -341,7 +337,6 @@ namespace MachineLanguage
 		{
 			frmMemoryEdit MemoryEditInstance = new frmMemoryEdit(this);
 			MemoryEditInstance.ShowDialog();
-
 		}
 
 		#endregion
@@ -741,8 +736,8 @@ namespace MachineLanguage
 		{
 			bool neg = number < 0;
 			if (neg) number = -number;
-			if (number >= 7.5) return (byte)(0x7F + ((neg ? 1 : 0) << 7));		//7.5 is the maximum value that can be stored.
-			if (number < 0.03125) return 0;										//0.03125 is the minimum non-zero value that can be stored.
+			if (number >= 7.5) return (neg ? 0xFF : 0x7F);			//7.5 is the maximum value that can be stored.
+			if (number < 0.03125) return 0;					//0.03125 is the minimum non-zero value that can be stored.
 
 			int integer = (int)(number * 256);
 
@@ -753,7 +748,7 @@ namespace MachineLanguage
 				exp++;
 			}
 
-			return (byte)(((neg ? 1 : 0) << 7) + (exp << 4) + integer);
+			return (byte)((neg ? 0x80 : 0x00) + (exp << 4) + integer);
 			
 		}
 		public static float BitsToFloat(byte b)
@@ -781,4 +776,3 @@ namespace MachineLanguage
 
 	}
 }
-
