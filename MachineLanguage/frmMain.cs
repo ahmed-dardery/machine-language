@@ -14,8 +14,8 @@ namespace MachineLanguage
 	public partial class frmMain : Form
 	{
 		TextBox txtFastEdit;
-		System.Windows.Forms.ListViewItem[] lstMemory;
-		System.Windows.Forms.ListViewItem[] lstRegister;
+		ListViewItem[] lstMemory;
+		ListViewItem[] lstRegister;
 
 		byte[] valMemory = new byte[256];
 		byte[] valRegister = new byte[16];
@@ -36,6 +36,7 @@ namespace MachineLanguage
 		{
 			this.Icon = MachineLanguage.Properties.Resources.icon_programming;
 			InitializeComponent();
+
 			chkSimple.Checked = true;
 
 			txtFastEdit = new TextBox();
@@ -47,13 +48,13 @@ namespace MachineLanguage
 
 
 			//Fills both the Memory and the Register with initial values of 0x00
-			lstMemory = new System.Windows.Forms.ListViewItem[256];
-			lstRegister = new System.Windows.Forms.ListViewItem[16];
+			lstMemory = new ListViewItem[256];
+			lstRegister = new ListViewItem[16];
 			for (int i = 0; i < 256; i++)
 			{
-				lstMemory[i] = new System.Windows.Forms.ListViewItem(new string[] { Extra.ToHex(i, 2), "00000000", "00", "0", "0" });
+				lstMemory[i] = new ListViewItem(new string[] { Extra.ToHex(i, 2), "00000000", "00", "0", "0" });
 
-				if (i < 16) lstRegister[i] = new System.Windows.Forms.ListViewItem(new string[] { Extra.ToHex(i, 1), "00000000", "00", "0", "0" });
+				if (i < 16) lstRegister[i] = new ListViewItem(new string[] { Extra.ToHex(i, 1), "00000000", "00", "0", "0" });
 			}
 
 			lstMyMemory.Items.AddRange(lstMemory);
@@ -238,7 +239,6 @@ namespace MachineLanguage
 				byte T = (byte)(IR[1] & 0xF);
 
 				EditRegister(R, (byte)(valRegister[S] + valRegister[T]));
-
 			}
 			else if (opcode == 6)
 			{
@@ -286,10 +286,7 @@ namespace MachineLanguage
 			else if (opcode == 11)
 			{ //B
 				byte R = (byte)(IR[0] & 0xF);
-				if (valRegister[R] == valRegister[0])
-				{
-					PC = IR[1];
-				}
+				if (valRegister[R] == valRegister[0]) PC = IR[1];
 			}
 			else if (opcode == 12)
 			{ //C
@@ -337,163 +334,6 @@ namespace MachineLanguage
 			set { _canExecute = value; btnExecute.Enabled = value; }
 		}
 
-		private void btnBatchEdit_Click(object sender, EventArgs e)
-		{
-			frmMemoryEdit MemoryEditInstance = new frmMemoryEdit(this);
-			MemoryEditInstance.ShowDialog();
-
-		}
-
-		#endregion
-
-		#region Events
-		private void btnFetch_Click(object sender, EventArgs e)
-		{
-			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
-					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
-			{
-				Fetch();
-			}
-		}
-
-		private void btnDecode_Click(object sender, EventArgs e)
-		{
-			Decode();
-		}
-
-		private void btnExecute_Click(object sender, EventArgs e)
-		{
-			Execute();
-		}
-
-		private void txtPC_TextChanged(object sender, EventArgs e)
-		{
-			if (txtPC.Text == "") canFetch = false;
-			else canFetch = Extra.IsHexable(txtPC.Text);
-		}
-		private void txtIR_TextChanged(object sender, EventArgs e)
-		{
-
-			if (txtIR.Text == "") canDecode = false;
-			else canDecode = (txtIR.Text.Length == txtIR.MaxLength) && Extra.IsHexable(txtIR.Text);
-		}
-
-		private void txtOpcode_TextChanged(object sender, EventArgs e)
-		{
-			if (txtOpcode.Text == "") canExecute = false;
-			else canExecute = true;
-		}
-
-		private void btnRunOne_Click(object sender, EventArgs e)
-		{
-			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
-					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
-			{
-				Fetch();
-				Decode();
-				Execute();
-			}
-
-		}
-		private void btnRunLoop_Click(object sender, EventArgs e)
-		{
-			Stopwatch mytimer = new Stopwatch();
-			mytimer.Start();
-
-			while (true)
-			{
-				Fetch();
-				Execute();
-				if (Halt)
-				{
-					Halt = false;
-					Decode();
-					MessageBox.Show("The Execution has been terminated.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Information);
-					break;
-				}
-				else if (Limit)
-				{
-					Limit = false;
-					Decode();
-					MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					break;
-				}
-				else if (mytimer.ElapsedMilliseconds > 7000)
-				{
-					Decode();
-					MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					break;
-				}
-			}
-			mytimer.Stop();
-		}
-
-		private void chkSimple_CheckedChanged(object sender, EventArgs e)
-		{
-			if (chkSimple.Checked)
-			{
-				int removed1 = clmnH14.Width + clmnH15.Width;
-				int removed2 = clmnH14.Width + clmnH15.Width;
-
-				lstMyMemory.Columns.Remove(clmnH14);
-				lstMyMemory.Columns.Remove(clmnH15);
-				lstMyRegisters.Columns.Remove(clmnH24);
-				lstMyRegisters.Columns.Remove(clmnH25);
-
-				this.Width -= removed1 + removed2;
-
-				grbMainMemory.Width -= removed1;
-				chkSimple.Location = new Point(chkSimple.Location.X - removed1, chkSimple.Location.Y);
-
-				grbRegister.Width -= removed2;
-				grbRegister.Location = new Point(grbRegister.Location.X - removed2, grbRegister.Location.Y);
-				grbControl.Width -= removed2;
-				grbControl.Location = new Point(grbControl.Location.X - removed2, grbControl.Location.Y);
-			}
-			else
-			{
-				int removed1 = clmnH14.Width + clmnH15.Width;
-				int removed2 = clmnH14.Width + clmnH15.Width;
-
-				lstMyMemory.Columns.Add(clmnH14);
-				lstMyMemory.Columns.Add(clmnH15);
-				lstMyRegisters.Columns.Add(clmnH24);
-				lstMyRegisters.Columns.Add(clmnH25);
-
-				this.Width += removed1 + removed2;
-
-				grbMainMemory.Width += removed1;
-				chkSimple.Location = new Point(chkSimple.Location.X + removed1, chkSimple.Location.Y);
-
-				grbRegister.Width += removed2;
-				grbRegister.Location = new Point(grbRegister.Location.X + removed2, grbRegister.Location.Y);
-				grbControl.Width += removed2;
-				grbControl.Location = new Point(grbControl.Location.X + removed2, grbControl.Location.Y);
-			}
-		}
-
-		private void lst_KeyUp(object sender, KeyEventArgs e)
-		{
-			var list = (ListView)sender;
-			if (list.SelectedIndices.Count > 0 && e.KeyData == Keys.Delete)
-			{
-				if (list.Name == lstMyRegisters.Name) EditRegister((byte)list.SelectedIndices[0], 0);
-				else if (list.Name == lstMyMemory.Name) EditMemory((byte)list.SelectedIndices[0], 0);
-			}
-		}
-
-		private void btnClearMemory_Click(object sender, EventArgs e)
-		{
-			if (MessageBox.Show("Are you sure you want to clear the entire memory?", "Clear Main Memory"
-				   , MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
-				FillMemory(new byte[256], 0x00);
-		}
-		private void btnClearRegister_Click(object sender, EventArgs e)
-		{
-			if (MessageBox.Show("Are you sure you want to clear all registers?", "Clear all Registers"
-				, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
-				FillRegister(new byte[16], 0x00);
-		}
 		#endregion
 
 		#region Quick Edit
@@ -601,14 +441,8 @@ namespace MachineLanguage
 
 		private void txtFastEdit_KeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.KeyCode == Keys.Enter)
-			{
-				ConfirmQuickEdit();
-			}
-			else if (e.KeyCode == Keys.Escape)
-			{
-				ConfirmQuickEdit(true);
-			}
+			if (e.KeyCode == Keys.Enter) ConfirmQuickEdit();
+			else if (e.KeyCode == Keys.Escape) ConfirmQuickEdit(true);
 		}
 		private void txtFastEdit_Leave(object sender, EventArgs e)
 		{
@@ -620,165 +454,162 @@ namespace MachineLanguage
 		}
 
 		#endregion
-	}
-	public class Extra
-	{
-		public static string[] mydescriptions = new string[] {
-			"NOTHING. Advance to the next step.",
-			"LOAD Register {0} with the content of memory at address {1}{2}.",
-			"LOAD Register {0} with bit pattern {1}{2}.",					  
-			"STORE the bit pattern of Register {0} in memory at address {1}{2}.",
-			"MOVE the bit pattern of Register {1} into Register {2}",
-			"ADD the bit patterns of Registers {1} and {2} as if they were integers, and store the result in Register {0}",
-			"ADD the bit patterns of Registers {1} and {2} as if they were floating point numbers, and store the result in Register {0}",
-			"OR the bit patterns of Registers {1} and {2}, and store the result in Register {0}.",
-			"AND the bit patterns of Registers {1} and {2}, and store the result in Register {0}.",
-			"XOR the bit patterns of Registers {1} and {2}, and store the result in Register {0}.",
-			"ROTATE the bit pattern in Register {0} one bit to the right {2} times.",
-			"JUMP to the instruction located in memory at address {1}{2} if the bit pattern in Register {0} matches with the bit pattern in Register 0.",
-			"HALT the execution.",				
-			"INVALID OPERATION: halts the execution.",
-			"INVALID OPERATION: halts the execution.",
-			"INVALID OPERATION: halts the execution."
-		};
 
-		public static string ToBin(int value, int len)
-		{
-			return (len > 1 ? ToBin(value >> 1, len - 1) : null) + "01"[value & 1];
-		}
-		public static string ToHex(int value, int len)
-		{
-			return (len > 1 ? ToHex(value >> 4, len - 4) : null) + "0123456789ABCDEF"[value & 0xF];
-		}
 
-		public static byte FromBin(string str)
+		private void btnFetch_Click(object sender, EventArgs e)
 		{
-			return Convert.ToByte(str, 2);
-		}
-		public static byte FromHex(string str)
-		{
-			return Convert.ToByte(str, 16);
-		}
-
-		public static bool IsHexable(char chr)
-		{
-			return (chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'F') || (chr >= 'a' && chr <= 'f');
-		}
-		public static bool IsHexable(string str)
-		{
-			foreach (char chr in str)
+			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
+					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
 			{
-				if (!IsHexable(chr)) return false;
+				Fetch();
 			}
-			return true;
 		}
-		public static bool IsBinable(char chr)
+
+		private void btnDecode_Click(object sender, EventArgs e)
 		{
-			return (chr == '0' || chr == '1');
+			Decode();
 		}
-		public static bool IsBinable(string str)
+
+		private void btnExecute_Click(object sender, EventArgs e)
 		{
-			foreach (char chr in str)
+			Execute();
+		}
+
+
+		private void btnRunOne_Click(object sender, EventArgs e)
+		{
+			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
+					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
 			{
-				if (!IsBinable(chr)) return false;
+				Fetch();
+				Decode();
+				Execute();
 			}
-			return true;
+
 		}
-
-		public enum errors
+		private void btnRunLoop_Click(object sender, EventArgs e)
 		{
-			NoError,
-			InvalidCharacter,
-			Incomplete,
-			NotProperCode
-		};
+			Stopwatch mytimer = new Stopwatch();
+			mytimer.Start();
 
-		public static errors StringToData(string str, out byte[] result)
-		{
-			List<byte> mylist = new List<byte>();
-			int i = 0;
-			char lastchar = ' ';
-			for (i = 0; i < str.Length;i++ )
+			while (true)
 			{
-				if (str[i] <= ' ') continue;
-
-				if (!IsHexable(str[i]))
+				Fetch();
+				Execute();
+				if (Halt)
 				{
-					result = null;
-					return errors.InvalidCharacter;
+					Halt = false;
+					Decode();
+					MessageBox.Show("The Execution has been terminated.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					break;
 				}
-
-				if (lastchar == ' ')
+				else if (Limit)
 				{
-					lastchar = str[i];
+					Limit = false;
+					Decode();
+					MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+					break;
 				}
-				else
+				else if (mytimer.ElapsedMilliseconds > 7000)
 				{
-					mylist.Add(Extra.FromHex(string.Concat(lastchar, str[i])));
-					lastchar = ' ';
+					Decode();
+					MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+					break;
 				}
 			}
-			result = mylist.ToArray();
-			if (lastchar != ' ') return errors.Incomplete;
-			if (mylist.Count % 2 != 0) return errors.NotProperCode; else return errors.NoError;
+			mytimer.Stop();
 		}
-	}
-	public class FloatingNotation
-	{
-		private byte bits;
 
-		public FloatingNotation() { this.bits = 0; }
-		public FloatingNotation(byte bits) { this.bits = bits; }
-		public FloatingNotation(float number) { this.bits = FloatToBits(number); }
-
-		public float ToFloat() { return BitsToFloat(bits); }
-		public byte ToBits() { return bits; }
-
-		public static FloatingNotation fromBits(byte bits) { return new FloatingNotation(bits); }
-		public static FloatingNotation fromFloat(float number) { return new FloatingNotation(number); }
-
-		public static byte FloatToBits(float number)
+		private void txtPC_TextChanged(object sender, EventArgs e)
 		{
-			bool neg = number < 0;
-			if (neg) number = -number;
-			if (number >= 7.5) return (byte)(0x7F + ((neg ? 1 : 0) << 7));		//7.5 is the maximum value that can be stored.
-			if (number < 0.03125) return 0;										//0.03125 is the minimum non-zero value that can be stored.
+			if (txtPC.Text == "") canFetch = false;
+			else canFetch = Extra.IsHexable(txtPC.Text);
+		}
+		private void txtIR_TextChanged(object sender, EventArgs e)
+		{
 
-			int integer = (int)(number * 256);
+			if (txtIR.Text == "") canDecode = false;
+			else canDecode = (txtIR.Text.Length == txtIR.MaxLength) && Extra.IsHexable(txtIR.Text);
+		}
 
-			int exp = 0;
-			while (integer > 16)
+		private void txtOpcode_TextChanged(object sender, EventArgs e)
+		{
+			if (txtOpcode.Text == "") canExecute = false;
+			else canExecute = true;
+		}
+
+
+		private void btnBatchEdit_Click(object sender, EventArgs e)
+		{
+			frmMemoryEdit MemoryEditInstance = new frmMemoryEdit(this);
+			MemoryEditInstance.ShowDialog();
+		}
+
+		private void chkSimple_CheckedChanged(object sender, EventArgs e)
+		{
+			if (chkSimple.Checked)
 			{
-				integer = integer >> 1;
-				exp++;
+				int removed1 = clmnH14.Width + clmnH15.Width;
+				int removed2 = clmnH14.Width + clmnH15.Width;
+
+				lstMyMemory.Columns.Remove(clmnH14);
+				lstMyMemory.Columns.Remove(clmnH15);
+				lstMyRegisters.Columns.Remove(clmnH24);
+				lstMyRegisters.Columns.Remove(clmnH25);
+
+				this.Width -= removed1 + removed2;
+
+				grbMainMemory.Width -= removed1;
+				chkSimple.Location = new Point(chkSimple.Location.X - removed1, chkSimple.Location.Y);
+
+				grbRegister.Width -= removed2;
+				grbRegister.Location = new Point(grbRegister.Location.X - removed2, grbRegister.Location.Y);
+				grbControl.Width -= removed2;
+				grbControl.Location = new Point(grbControl.Location.X - removed2, grbControl.Location.Y);
 			}
+			else
+			{
+				int removed1 = clmnH14.Width + clmnH15.Width;
+				int removed2 = clmnH14.Width + clmnH15.Width;
 
-			return (byte)(((neg ? 1 : 0) << 7) + (exp << 4) + integer);
-			
-		}
-		public static float BitsToFloat(byte b)
-		{ 
-			return (((b & 0x80) == 0x80) ? -1 : 1) * (b & 0xF) * (float)Math.Pow(2, ((b >> 4) & 7) - 8);
-		}
-		
+				lstMyMemory.Columns.Add(clmnH14);
+				lstMyMemory.Columns.Add(clmnH15);
+				lstMyRegisters.Columns.Add(clmnH24);
+				lstMyRegisters.Columns.Add(clmnH25);
 
-		public static FloatingNotation operator+ (FloatingNotation x, FloatingNotation y)
-		{
-			return new FloatingNotation(x.ToFloat() + y.ToFloat());
-		}
-		public static FloatingNotation operator -(FloatingNotation x, FloatingNotation y)
-		{
-			return new FloatingNotation(x.ToFloat() - y.ToFloat());
-		}
-		public static FloatingNotation operator *(FloatingNotation x, FloatingNotation y)
-		{
-			return new FloatingNotation(x.ToFloat() * y.ToFloat());
-		}
-		public static FloatingNotation operator /(FloatingNotation x, FloatingNotation y)
-		{
-			return new FloatingNotation(x.ToFloat() / y.ToFloat());
+				this.Width += removed1 + removed2;
+
+				grbMainMemory.Width += removed1;
+				chkSimple.Location = new Point(chkSimple.Location.X + removed1, chkSimple.Location.Y);
+
+				grbRegister.Width += removed2;
+				grbRegister.Location = new Point(grbRegister.Location.X + removed2, grbRegister.Location.Y);
+				grbControl.Width += removed2;
+				grbControl.Location = new Point(grbControl.Location.X + removed2, grbControl.Location.Y);
+			}
 		}
 
+		private void lst_KeyUp(object sender, KeyEventArgs e)
+		{
+			var list = (ListView)sender;
+			if (list.SelectedIndices.Count > 0 && e.KeyData == Keys.Delete)
+			{
+				if (list.Name == lstMyRegisters.Name) EditRegister((byte)list.SelectedIndices[0], 0);
+				else if (list.Name == lstMyMemory.Name) EditMemory((byte)list.SelectedIndices[0], 0);
+			}
+		}
+
+		private void btnClearMemory_Click(object sender, EventArgs e)
+		{
+			if (MessageBox.Show("Are you sure you want to clear the entire memory?", "Clear Main Memory"
+				   , MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+				FillMemory(new byte[256], 0x00);
+		}
+		private void btnClearRegister_Click(object sender, EventArgs e)
+		{
+			if (MessageBox.Show("Are you sure you want to clear all registers?", "Clear all Registers"
+				, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+				FillRegister(new byte[16], 0x00);
+		}
 	}
 }
-
