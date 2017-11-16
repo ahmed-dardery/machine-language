@@ -79,13 +79,21 @@ namespace MachineLanguage
 		public static errors StringToData(string str, out byte[] result)
 		{
 			List<byte> mylist = new List<byte>();
-			int i = 0;
-			char lastchar = ' ';
-			for (i = 0; i < str.Length; i++)
-			{
-				if (str[i] <= ' ') continue;
 
-				if (!IsHexable(str[i]))
+			char lastchar = ' ';
+			bool comment = false;
+			foreach (char chr in str)
+			{
+				if (chr == '/' || comment)
+				{
+					comment = true;
+					if (chr == '\n') comment = false;
+					continue;
+				}
+
+				if (chr <= ' ') continue;
+
+				if (!IsHexable(chr))
 				{
 					result = null;
 					return errors.InvalidCharacter;
@@ -93,11 +101,11 @@ namespace MachineLanguage
 
 				if (lastchar == ' ')
 				{
-					lastchar = str[i];
+					lastchar = chr;
 				}
 				else
 				{
-					mylist.Add(Extra.FromHex(string.Concat(lastchar, str[i])));
+					mylist.Add(Extra.FromHex(string.Concat(lastchar, chr)));
 					lastchar = ' ';
 				}
 			}
