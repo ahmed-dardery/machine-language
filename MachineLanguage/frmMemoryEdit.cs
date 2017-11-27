@@ -49,6 +49,7 @@ namespace MachineLanguage
 					MessageBox.Show("The Memory cannot be modified past 0xFF.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 					return;
 				}
+				mainform.Modified = true;
 				mainform.FillMemory(result,address);
 				this.Close();
 			}

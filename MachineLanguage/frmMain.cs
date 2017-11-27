@@ -22,6 +22,7 @@ namespace MachineLanguage
 
 		bool Halt = false;
 		bool Limit = false;
+		public bool Modified = false;
 
 		byte _PC = 0x00;
 		public byte PC
@@ -40,7 +41,7 @@ namespace MachineLanguage
 			chkSimple.Checked = true;
 
 			txtFastEdit = new TextBox();
-			txtFastEdit.Visible = false;
+			editing = false;
 			this.Controls.Add(txtFastEdit);
 			txtFastEdit.BringToFront();
 			txtFastEdit.KeyDown += new KeyEventHandler(this.txtFastEdit_KeyDown);
@@ -74,6 +75,14 @@ namespace MachineLanguage
 			lstMemory[address].SubItems[4].Text = FloatingNotation.BitsToFloat(x).ToString();
 
 			valMemory[address] = x;
+
+			if (address == 0x00)
+			{
+				if (x != 0x00)
+				{ txtScreen.AppendText(((char)x).ToString()); }
+				else
+				{ txtScreen.Clear(); }
+			}
 		}
 		//Instead of only editing the numerical value. This also edits its representation in the ListView.
 		public void EditRegister(byte id, byte x)
@@ -110,7 +119,9 @@ namespace MachineLanguage
 			lblO1.Text = L1;
 			lblO2.Text = L2;
 			lblO3.Text = L3;
-			txtDescription.Text = string.Format(description, IR[0] & 0xF, IR[1] >> 4, IR[1] & 0xF);
+
+			
+			txtDescription.Text = string.Format(description, Extra.ToHex(IR[0] & 0xF,1), Extra.ToHex(IR[1] >> 4,1), Extra.ToHex(IR[1] & 0xF,1));
 		}
 
 		#endregion
@@ -334,6 +345,25 @@ namespace MachineLanguage
 			set { _canExecute = value; btnExecute.Enabled = value; }
 		}
 
+		bool FetchPossible()
+		{
+			if (Halt)
+			{
+				return (MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program. Are you sure you want to perform the next operation?", "Instruction Halt"
+				   , MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes);
+			}
+			else if (Modified)
+			{
+				if (MessageBox.Show("Since the last operation, memory has been edited externally. Please check that you have adjusted the Program Counter correctly. Are you sure you want to perform the next operation?", "Instruction Halt"
+				   , MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
+				{
+					Modified = false;
+					return true;
+				}
+				else return false;
+			}
+			else return true;
+		}
 		#endregion
 
 		#region Quick Edit
@@ -341,7 +371,12 @@ namespace MachineLanguage
 		int curCol;
 
 		ListView lstData;
-
+		bool _editing = false;
+		bool editing
+		{
+			get { return _editing; }
+			set { _editing = value; txtFastEdit.Visible = value; }
+		}
 
 		private void lstData_DoubleClick(object sender, EventArgs e)
 		{
@@ -376,7 +411,7 @@ namespace MachineLanguage
 
 			txtFastEdit.Bounds = getBounds(curRow, curCol);
 			txtFastEdit.Text = _myitem.SubItems[curCol].Text;
-			txtFastEdit.Visible = true;
+			editing = true;
 			txtFastEdit.Focus();
 			txtFastEdit.SelectionStart = 0;
 			txtFastEdit.SelectionLength = txtFastEdit.TextLength;
@@ -400,7 +435,7 @@ namespace MachineLanguage
 		public void ConfirmQuickEdit(bool Cancel = false)
 		{
 
-			if (txtFastEdit.Visible == true)
+			if (editing == true)
 			{
 				if (!Cancel)
 				{
@@ -433,7 +468,7 @@ namespace MachineLanguage
 							break;
 					}
 				}
-				txtFastEdit.Visible = false;
+				editing = false;
 				lstData.Focus();
 
 			}
@@ -458,8 +493,7 @@ namespace MachineLanguage
 
 		private void btnFetch_Click(object sender, EventArgs e)
 		{
-			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
-					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
+			if (FetchPossible())
 			{
 				Fetch();
 			}
@@ -478,8 +512,7 @@ namespace MachineLanguage
 
 		private void btnRunOne_Click(object sender, EventArgs e)
 		{
-			if (!Halt || MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program, Are you sure you want to perform the next operation?", "Instruction Halt"
-					, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
+			if (FetchPossible())
 			{
 				Fetch();
 				Decode();
@@ -489,41 +522,46 @@ namespace MachineLanguage
 		}
 		private void btnRunLoop_Click(object sender, EventArgs e)
 		{
-			Stopwatch mytimer = new Stopwatch();
-			mytimer.Start();
-
-			while (true)
+			if (FetchPossible())
 			{
-				Fetch();
-				Execute();
-				if (Halt)
+				Stopwatch mytimer = new Stopwatch();
+				mytimer.Start();
+
+				while (true)
 				{
-					Halt = false;
-					Decode();
-					MessageBox.Show("The Execution has been terminated.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Information);
-					break;
+					Fetch();
+					Execute();
+					if (Halt)
+					{
+						Halt = false;
+						Decode();
+						MessageBox.Show("The Execution has been terminated.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Information);
+						break;
+					}
+					else if (Limit)
+					{
+						Limit = false;
+						Decode();
+						MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						break;
+					}
+					else if (mytimer.ElapsedMilliseconds > 7000)
+					{
+						Decode();
+						MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						break;
+					}
 				}
-				else if (Limit)
-				{
-					Limit = false;
-					Decode();
-					MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					break;
-				}
-				else if (mytimer.ElapsedMilliseconds > 7000)
-				{
-					Decode();
-					MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					break;
-				}
+				mytimer.Stop();
 			}
-			mytimer.Stop();
 		}
 
 		private void txtPC_TextChanged(object sender, EventArgs e)
 		{
 			if (txtPC.Text == "") canFetch = false;
 			else canFetch = Extra.IsHexable(txtPC.Text);
+
+			Modified = false;
 		}
 		private void txtIR_TextChanged(object sender, EventArgs e)
 		{
@@ -566,6 +604,8 @@ namespace MachineLanguage
 				grbRegister.Location = new Point(grbRegister.Location.X - removed2, grbRegister.Location.Y);
 				grbControl.Width -= removed2;
 				grbControl.Location = new Point(grbControl.Location.X - removed2, grbControl.Location.Y);
+				grbScreen.Location = new Point(grbScreen.Location.X - removed2, grbScreen.Location.Y);
+				btnRunOne.Text = "Run one cycle";
 			}
 			else
 			{
@@ -586,6 +626,8 @@ namespace MachineLanguage
 				grbRegister.Location = new Point(grbRegister.Location.X + removed2, grbRegister.Location.Y);
 				grbControl.Width += removed2;
 				grbControl.Location = new Point(grbControl.Location.X + removed2, grbControl.Location.Y);
+				grbScreen.Location = new Point(grbScreen.Location.X + removed2, grbScreen.Location.Y);
+				btnRunOne.Text = "Run one cycle ( Fetch - Decode - Execute )";
 			}
 		}
 
@@ -610,6 +652,11 @@ namespace MachineLanguage
 			if (MessageBox.Show("Are you sure you want to clear all registers?", "Clear all Registers"
 				, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
 				FillRegister(new byte[16], 0x00);
+		}
+
+		private void btnClearScreen_Click(object sender, EventArgs e)
+		{
+			txtScreen.Clear();
 		}
 	}
 }

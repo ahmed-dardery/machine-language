@@ -67,9 +67,13 @@
 			this.btnRunLoop = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
 			this.chkSimple = new System.Windows.Forms.CheckBox();
+			this.grbScreen = new System.Windows.Forms.GroupBox();
+			this.txtScreen = new System.Windows.Forms.TextBox();
+			this.btnClearScreen = new System.Windows.Forms.Button();
 			this.grbRegister.SuspendLayout();
 			this.grbMainMemory.SuspendLayout();
 			this.grbControl.SuspendLayout();
+			this.grbScreen.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// lstMyMemory
@@ -421,7 +425,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.btnRunOne.Location = new System.Drawing.Point(9, 19);
 			this.btnRunOne.Name = "btnRunOne";
-			this.btnRunOne.Size = new System.Drawing.Size(526, 23);
+			this.btnRunOne.Size = new System.Drawing.Size(245, 23);
 			this.btnRunOne.TabIndex = 0;
 			this.btnRunOne.Text = "Run one cycle ( Fetch - Decode - Execute )";
 			this.btnRunOne.UseVisualStyleBackColor = true;
@@ -431,9 +435,9 @@
 			// 
 			this.grbControl.Controls.Add(this.btnRunLoop);
 			this.grbControl.Controls.Add(this.btnRunOne);
-			this.grbControl.Location = new System.Drawing.Point(376, 375);
+			this.grbControl.Location = new System.Drawing.Point(657, 375);
 			this.grbControl.Name = "grbControl";
-			this.grbControl.Size = new System.Drawing.Size(544, 108);
+			this.grbControl.Size = new System.Drawing.Size(263, 108);
 			this.grbControl.TabIndex = 2;
 			this.grbControl.TabStop = false;
 			this.grbControl.Text = "Control";
@@ -444,7 +448,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.btnRunLoop.Location = new System.Drawing.Point(9, 48);
 			this.btnRunLoop.Name = "btnRunLoop";
-			this.btnRunLoop.Size = new System.Drawing.Size(526, 50);
+			this.btnRunLoop.Size = new System.Drawing.Size(245, 50);
 			this.btnRunLoop.TabIndex = 1;
 			this.btnRunLoop.Text = "Run untill halt";
 			this.btnRunLoop.UseVisualStyleBackColor = true;
@@ -470,11 +474,47 @@
 			this.chkSimple.UseVisualStyleBackColor = true;
 			this.chkSimple.CheckedChanged += new System.EventHandler(this.chkSimple_CheckedChanged);
 			// 
+			// grbScreen
+			// 
+			this.grbScreen.Controls.Add(this.btnClearScreen);
+			this.grbScreen.Controls.Add(this.txtScreen);
+			this.grbScreen.Location = new System.Drawing.Point(378, 375);
+			this.grbScreen.Name = "grbScreen";
+			this.grbScreen.Size = new System.Drawing.Size(273, 108);
+			this.grbScreen.TabIndex = 5;
+			this.grbScreen.TabStop = false;
+			this.grbScreen.Text = "Screen";
+			// 
+			// txtScreen
+			// 
+			this.txtScreen.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.txtScreen.Location = new System.Drawing.Point(6, 19);
+			this.txtScreen.MaxLength = 0;
+			this.txtScreen.Multiline = true;
+			this.txtScreen.Name = "txtScreen";
+			this.txtScreen.ReadOnly = true;
+			this.txtScreen.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.txtScreen.Size = new System.Drawing.Size(261, 79);
+			this.txtScreen.TabIndex = 0;
+			// 
+			// btnClearScreen
+			// 
+			this.btnClearScreen.Location = new System.Drawing.Point(229, 0);
+			this.btnClearScreen.Name = "btnClearScreen";
+			this.btnClearScreen.Size = new System.Drawing.Size(40, 23);
+			this.btnClearScreen.TabIndex = 6;
+			this.btnClearScreen.Text = "Clear";
+			this.btnClearScreen.UseVisualStyleBackColor = true;
+			this.btnClearScreen.Click += new System.EventHandler(this.btnClearScreen_Click);
+			// 
 			// frmMain
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(928, 498);
+			this.Controls.Add(this.grbScreen);
 			this.Controls.Add(this.chkSimple);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.grbControl);
@@ -488,6 +528,8 @@
 			this.grbRegister.PerformLayout();
 			this.grbMainMemory.ResumeLayout(false);
 			this.grbControl.ResumeLayout(false);
+			this.grbScreen.ResumeLayout(false);
+			this.grbScreen.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -534,6 +576,9 @@
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.TextBox txtDescription;
 		private System.Windows.Forms.CheckBox chkSimple;
+		private System.Windows.Forms.GroupBox grbScreen;
+		private System.Windows.Forms.TextBox txtScreen;
+		private System.Windows.Forms.Button btnClearScreen;
 	}
 }
 
