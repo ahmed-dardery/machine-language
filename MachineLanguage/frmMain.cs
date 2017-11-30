@@ -22,7 +22,6 @@ namespace MachineLanguage
 
 		bool Halt = false;
 		bool Limit = false;
-		public bool Modified = false;
 
 		byte _PC = 0x00;
 		public byte PC
@@ -203,6 +202,21 @@ namespace MachineLanguage
 			txtOperand3.Text = Extra.ToHex(IR[1] & 0xF, 1);
 		}
 
+		void ResetIR()
+		{
+			txtIR.Text = "";
+			ResetDecode();
+		}
+		void ResetDecode()
+		{
+			SetOpDescription("?", "?", "?", "?", "");
+			txtOpcode.Text = "";
+			txtOperand1.Text = "";
+			txtOperand2.Text = "";
+			txtOperand3.Text = "";
+			canExecute = false;
+		}
+
 		/// <summary>
 		/// Perform the action required by the instruction in the instruction register.
 		/// </summary>
@@ -351,16 +365,6 @@ namespace MachineLanguage
 			{
 				return (MessageBox.Show("The last performed instruction resulted in a halt to the execution of the program. Are you sure you want to perform the next operation?", "Instruction Halt"
 				   , MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes);
-			}
-			else if (Modified)
-			{
-				if (MessageBox.Show("Since the last operation, memory has been edited externally. Please check that you have adjusted the Program Counter correctly. Are you sure you want to perform the next operation?", "Instruction Halt"
-				   , MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes)
-				{
-					Modified = false;
-					return true;
-				}
-				else return false;
 			}
 			else return true;
 		}
@@ -558,16 +562,19 @@ namespace MachineLanguage
 
 		private void txtPC_TextChanged(object sender, EventArgs e)
 		{
+			ResetIR();
+
 			if (txtPC.Text == "") canFetch = false;
 			else canFetch = Extra.IsHexable(txtPC.Text);
 
-			Modified = false;
 		}
 		private void txtIR_TextChanged(object sender, EventArgs e)
 		{
+			ResetDecode();
 
 			if (txtIR.Text == "") canDecode = false;
 			else canDecode = (txtIR.Text.Length == txtIR.MaxLength) && Extra.IsHexable(txtIR.Text);
+
 		}
 
 		private void txtOpcode_TextChanged(object sender, EventArgs e)

@@ -73,10 +73,13 @@ namespace MachineLanguage
 			NoError,
 			InvalidCharacter,
 			Incomplete,
-			NotProperCode
+			NotProperCode,
+			HalfJump,
+			OutOfRangeJump,
+			Past0xFF
 		};
 
-		public static errors StringToData(string str, out byte[] result)
+		public static errors StringToData(string str, out byte[] result,byte address=0xFF)
 		{
 			List<byte> mylist = new List<byte>();
 
@@ -110,8 +113,18 @@ namespace MachineLanguage
 				}
 			}
 			result = mylist.ToArray();
-			if (lastchar != ' ') return errors.Incomplete;
-			if (mylist.Count % 2 != 0) return errors.NotProperCode; else return errors.NoError;
+			if (0xFF - address < mylist.Count - 1) return errors.Past0xFF;
+			else if (lastchar != ' ') return errors.Incomplete;
+			else if (mylist.Count % 2 != 0) return errors.NotProperCode;
+			for (int i = 0; i < mylist.Count; i += 2)
+			{
+				if (mylist[i]>>4 == 0xB)
+				{
+					if (mylist[i + 1] < address || mylist[i + 1] >= address + mylist.Count) return errors.OutOfRangeJump;
+					else if ((mylist[i + 1] % 2) != (address % 2)) return errors.HalfJump;
+				}
+			}
+			return errors.NoError;
 		}
 	}
 }

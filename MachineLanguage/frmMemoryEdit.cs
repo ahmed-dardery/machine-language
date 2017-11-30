@@ -22,10 +22,19 @@ namespace MachineLanguage
 		private void button1_Click(object sender, EventArgs e)
 		{
 			try {
+				if (!Extra.IsHexable(textBox2.Text))
+				{
+					MessageBox.Show("The address is Invalid", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+					return;
+				}
+				byte address = Extra.FromHex(textBox2.Text);
+
+
 				var builder = new StringBuilder();
 
+
 				byte[] result; 
-				switch (Extra.StringToData(textBox1.Text,out result))
+				switch (Extra.StringToData(textBox1.Text,out result,address))
 				{
 					case Extra.errors.InvalidCharacter:
 						MessageBox.Show("Couldn't interpret the added memory.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -33,23 +42,24 @@ namespace MachineLanguage
 					case Extra.errors.Incomplete:
 						MessageBox.Show("The hex code you entered does not form complete bytes. Please check your code.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 						return;
+					case Extra.errors.Past0xFF:
+						MessageBox.Show("The Memory cannot be modified past 0xFF.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						return;
 					case Extra.errors.NotProperCode:
 						if (MessageBox.Show("The code you added does not form a complete instruction set. Are you sure you want to add this code?", "Batch Add Code"
 						, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == System.Windows.Forms.DialogResult.No) return;
 						break;
+					case Extra.errors.OutOfRangeJump:
+						if (MessageBox.Show("The code you added contains a jump to somewhere in memory that will not be modified by this process. Double check the address. Are you sure you want to proceed?", "Batch Add Code"
+						, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == System.Windows.Forms.DialogResult.No) return;
+						break;
+					case Extra.errors.HalfJump:
+						if (MessageBox.Show("The code you added contains a jump to the middle of a typical instruction code. Are you sure you want to proceed?", "Batch Add Code"
+						, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == System.Windows.Forms.DialogResult.No) return;
+						break;
 				}
-				if (!Extra.IsHexable(textBox2.Text))
-				{
-					MessageBox.Show("The address is Invalid", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
-				}
-				byte address = byte.Parse(textBox2.Text, System.Globalization.NumberStyles.HexNumber);
-				if (0xFF - address < result.Length - 1)
-				{
-					MessageBox.Show("The Memory cannot be modified past 0xFF.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
-				}
-				mainform.Modified = true;
+
+				mainform.PC = address;
 				mainform.FillMemory(result,address);
 				this.Close();
 			}
