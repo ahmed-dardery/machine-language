@@ -549,7 +549,7 @@ namespace MachineLanguage
 						MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 						break;
 					}
-					else if (mytimer.ElapsedMilliseconds > 7000)
+					else if (mytimer.ElapsedMilliseconds > 15000)
 					{
 						Decode();
 						MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
