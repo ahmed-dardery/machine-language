@@ -76,7 +76,8 @@ namespace MachineLanguage
 			NotProperCode,
 			HalfJump,
 			OutOfRangeJump,
-			Past0xFF
+			Past0xFF,
+			MemoryLoad
 		};
 
 		public static errors StringToData(string str, out byte[] result,byte address=0xFF)
@@ -123,6 +124,10 @@ namespace MachineLanguage
 					if (mylist[i + 1] < address || mylist[i + 1] >= address + mylist.Count) return errors.OutOfRangeJump;
 					else if ((mylist[i + 1] % 2) != (address % 2)) return errors.HalfJump;
 				}
+				//else if (mylist[i] >> 4 == 0x1)
+				//{
+				//	if (mylist[i + 1] < address || mylist[i + 1] >= address + mylist.Count) return errors.MemoryLoad;
+				//}
 			}
 			return errors.NoError;
 		}

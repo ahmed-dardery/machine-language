@@ -16,8 +16,8 @@ namespace MachineLanguage
 		TextBox txtFastEdit;
 		ListViewItem[] lstMemory;
 		ListViewItem[] lstRegister;
-
-		byte[] valMemory = new byte[256];
+        
+        byte[] valMemory = new byte[256];
 		byte[] valRegister = new byte[16];
 
 		bool Halt = false;
@@ -26,8 +26,22 @@ namespace MachineLanguage
 		byte _PC = 0x00;
 		public byte PC
 		{
-			get { return _PC; }
-			set { _PC = value; txtPC.Text = Extra.ToHex(_PC, 4); }
+			get { return _PC; } 
+			set {
+                _PC = value;
+                txtPC.Text = Extra.ToHex(_PC, 4);
+                System.Threading.ThreadPool.QueueUserWorkItem(delegate{
+                    txtPC.Invoke((MethodInvoker) delegate
+                    {
+                        txtPC.BackColor = Color.LightGreen;
+                    });
+                    System.Threading.Thread.Sleep(1000);
+                    txtPC.Invoke((MethodInvoker)delegate
+                    {
+                        txtPC.BackColor = SystemColors.Window;
+                    });
+                }, null);
+            }
 		}
 		byte[] IR = { 0x00, 0x00 };
 
@@ -63,10 +77,10 @@ namespace MachineLanguage
 
 		}
 
-		#region Memory/Register Wrapper
+        #region Memory/Register Wrapper
 
-		//Instead of only editing the numerical value. This also edits its representation in the ListView.
-		public void EditMemory(byte address, byte x)
+        //Instead of only editing the numerical value. This also edits its representation in the ListView.
+        public void EditMemory(byte address, byte x, bool highlight = true)
 		{
 			lstMemory[address].SubItems[1].Text = Extra.ToBin(x, 8);
 			lstMemory[address].SubItems[2].Text = Extra.ToHex(x, 2);
@@ -82,34 +96,59 @@ namespace MachineLanguage
 				else
 				{ txtScreen.Clear(); }
 			}
-		}
+            if (highlight)
+            {
+                lstMemory[address].EnsureVisible();
+                System.Threading.ThreadPool.QueueUserWorkItem(delegate {
+                    Highlight(lstMemory[address], Color.Pink);
+                }, null);
+            }
+        }
 		//Instead of only editing the numerical value. This also edits its representation in the ListView.
-		public void EditRegister(byte id, byte x)
+		public void EditRegister(byte id, byte x, bool highlight = true)
 		{
 			lstRegister[id].SubItems[1].Text = Extra.ToBin(x, 8);
 			lstRegister[id].SubItems[2].Text = Extra.ToHex(x, 2);
 			lstRegister[id].SubItems[3].Text = ((sbyte)x).ToString();
 			lstRegister[id].SubItems[4].Text = FloatingNotation.BitsToFloat(x).ToString();
 			valRegister[id] = x;
-		}
+            if (highlight)
+            {
+                System.Threading.ThreadPool.QueueUserWorkItem(delegate
+                {
+                    Highlight(lstRegister[id], Color.Pink);
+                }, null);
+            }
+        }
 
 		public void FillMemory(byte[] code, byte address = 0)
 		{
+            byte initial = address;
 			foreach (byte x in code)
 			{
-				EditMemory(address, x);
+				EditMemory(address, x, false);
 				address++;
 			}
+            lstMyMemory.TopItem = lstMemory[initial];
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                Highlight(lstMemory, initial, address, Color.Pink);
+            }, null);
 		}
 
 		public void FillRegister(byte[] code, byte address = 0)
 		{
-			foreach (byte x in code)
+            byte initial = address;
+            foreach (byte x in code)
 			{
-				EditRegister(address, x);
+				EditRegister(address, x, false);
 				address++;
 			}
-		}
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                Highlight(lstRegister, initial, address, Color.Pink);
+            }, null);
+        }
 
 		void SetOpDescription(string L0, string L1, string L2, string L3, string description)
 		{
@@ -130,9 +169,9 @@ namespace MachineLanguage
 		/// <summary>
 		/// Retrieve the next instruction from memory (as indicated by the program counter) and then increment the program counter.
 		/// </summary>
-		void Fetch()
+		void Fetch(bool quick = false)
 		{
-			PC = Extra.FromHex(txtPC.Text);
+			if (!quick) PC = Extra.FromHex(txtPC.Text);
 
 			IR[0] = valMemory[PC];
 			if (PC + 1 > 255)
@@ -149,8 +188,10 @@ namespace MachineLanguage
 
 			PC = (byte)(PC + 2);
 
-			txtIR.Text = Extra.ToHex(IR[0], 2) + Extra.ToHex(IR[1], 2);
-			txtPC.Text = Extra.ToHex(PC, 2);
+			if (!quick) { 
+				txtIR.Text = Extra.ToHex(IR[0], 2) + Extra.ToHex(IR[1], 2);
+				txtPC.Text = Extra.ToHex(PC, 2);
+			}
 		}
 
 		/// <summary>
@@ -533,11 +574,14 @@ namespace MachineLanguage
 
 				while (true)
 				{
-					Fetch();
+					PC = Extra.FromHex(txtPC.Text);
+					Fetch(true);
 					Execute();
 					if (Halt)
 					{
 						Halt = false;
+						txtIR.Text = Extra.ToHex(IR[0], 2) + Extra.ToHex(IR[1], 2);
+						txtPC.Text = Extra.ToHex(PC, 2);
 						Decode();
 						MessageBox.Show("The Execution has been terminated.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Information);
 						break;
@@ -545,12 +589,16 @@ namespace MachineLanguage
 					else if (Limit)
 					{
 						Limit = false;
+						txtIR.Text = Extra.ToHex(IR[0], 2) + Extra.ToHex(IR[1], 2);
+						txtPC.Text = Extra.ToHex(PC, 2);
 						Decode();
 						MessageBox.Show("The Execution has reached the end of the memory.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 						break;
 					}
 					else if (mytimer.ElapsedMilliseconds > 15000)
 					{
+						txtIR.Text = Extra.ToHex(IR[0], 2) + Extra.ToHex(IR[1], 2);
+						txtPC.Text = Extra.ToHex(PC, 2);
 						Decode();
 						MessageBox.Show("The Execution has timed out. Ensure that there are no infinite loops in the instruction set.", "Execution", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 						break;
@@ -665,5 +713,33 @@ namespace MachineLanguage
 		{
 			txtScreen.Clear();
 		}
-	}
+
+		private void frmMain_Load(object sender, EventArgs e)
+		{
+
+		}
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+      
+        private void Highlight(ListViewItem[] target, int st, int en, Color color)
+        {
+            if (st == en && en == 0)
+                en = 256;
+            for(int i = st; i < en; i++)
+                target[i].BackColor = color;
+            System.Threading.Thread.Sleep(1500);
+            for (int i = st; i < en; i++)
+                target[i].BackColor = SystemColors.Window;
+        }
+        private void Highlight(ListViewItem target, Color color)
+        {
+            target.BackColor = color;
+            System.Threading.Thread.Sleep(1500);
+            target.BackColor = SystemColors.Window;
+        }
+
+    }
 }

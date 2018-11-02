@@ -57,6 +57,9 @@ namespace MachineLanguage
 						if (MessageBox.Show("The code you added contains a jump to the middle of a typical instruction code. Are you sure you want to proceed?", "Batch Add Code"
 						, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == System.Windows.Forms.DialogResult.No) return;
 						break;
+					case Extra.errors.MemoryLoad:
+						MessageBox.Show("The code you entered contains LOADs from other locations of memory. Make sure to modify them before you run the code.", "Batch Add Code", MessageBoxButtons.OK, MessageBoxIcon.Information);
+						break;
 				}
 
 				mainform.PC = address;
